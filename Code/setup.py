@@ -1,9 +1,11 @@
+
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import os
 import matplotlib
 matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
 
 
 # READ IN DATA
@@ -23,10 +25,16 @@ for file in files:
     df['dttm'] = pd.to_datetime(df['dttm'], format='%Y%m%d %H:%M:%S')
     df = df.set_index('dttm')
     df = df['LMP']
+    df = df.astype('float')
     raw_data = pd.concat([raw_data, df])
 
 raw_data.columns = pd.Index(['LMP'])
 
 
+raw_data.describe()
 
-
+raw_data.plot()
+raw_data.hist(bins=50)
+raw_data.plot.density()
+raw_data.hist(log=True, bins=50)
+# raw_data.plot.density(logy=True, logx=True)
