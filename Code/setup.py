@@ -8,6 +8,11 @@ matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 
 
+# matplotlib style
+font = {'size': 20}
+matplotlib.rc('font', **font)
+#plt.style.use('default')
+
 # READ IN DATA
 data_folder = Path('../Data/historical')
 files = os.listdir(data_folder)
@@ -30,11 +35,33 @@ for file in files:
 
 raw_data.columns = pd.Index(['LMP'])
 
+summ = raw_data.describe()
+summ.transpose().to_latex()
 
-raw_data.describe()
+fig = plt.figure()
+plt.plot(raw_data)
+plt.xlabel('Date')
+plt.ylabel('LMP ($/MWh)')
+fig.autofmt_xdate()
+plt.tight_layout()
 
-raw_data.plot()
+
 raw_data.hist(bins=50)
-raw_data.plot.density()
+plt.xlabel('LMP ($/MWh)')
+plt.ylabel('Frequency')
+plt.tight_layout()
+
+
+raw_data.plot.density(ind=np.linspace(raw_data.LMP.min()-raw_data.LMP.std(), raw_data.LMP.max()+raw_data.LMP.std(), num=1000))
+plt.xlabel('LMP ($/MWh)')
+plt.ylabel('Probability')
+plt.tight_layout()
+
+
 raw_data.hist(log=True, bins=50)
-# raw_data.plot.density(logy=True, logx=True)
+plt.xlabel('LMP ($/MWh)')
+plt.ylabel('Frequency')
+plt.tight_layout()
+
+
+#raw_data.plot.density(logy=True, logx=True)
