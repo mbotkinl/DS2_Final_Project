@@ -78,26 +78,29 @@ ene_cap = 100
 ene_init = 0.5*ene_cap
 eff_ch = 0.9
 eff_dis = 0.9
-power_ch = 10
-power_dis = 10
+power_ch = 50
+power_dis = 50
 dt = 5/60
 
 # Central Solution
-p_ch = cp.Variable(K, name='p_ch', nonneg=True)    # EV Charging power
-p_dis = cp.Variable(K, name='p_dis', nonneg=True)    # EV Discharging power
-ene = cp.Variable(K+1, name='ene', nonneg=True)  # ESS Energy
+prices_round = raw_data.LMP.round(2)
+len_opt = K
+p_ch = cp.Variable(len_opt, name='p_ch', nonneg=True)    # EV Charging power
+p_dis = cp.Variable(len_opt, name='p_dis', nonneg=True)    # EV Discharging power
+ene = cp.Variable(len_opt+1, name='ene', nonneg=True)  # ESS Energy
 constraints = []
-constraints += [ene <= np.tile(ene_cap, K+1)]  # energy upper limit
-constraints += [ene >= np.tile(0, K+1)]  # energy lower limit
-constraints += [p_ch <= np.tile(power_ch, K)]  # power upper limit
-constraints += [p_ch >= np.tile(0, K)]  # power lower limit
-constraints += [p_dis <= np.tile(power_dis, K)]  # power upper limit
-constraints += [p_dis >= np.tile(0, K)]  # power lower limit
-constraints += [ene[K] == ene_init]  # ending
-for k in range(K):
-    constraints += [ene[k + 1] == ene[k] + (p_ch-p_dis) * dt]
+constraints += [ene <= np.tile(ene_cap, len_opt+1)]  # energy upper limit
+constraints += [ene >= np.tile(0, len_opt+1)]  # energy lower limit
+constraints += [p_ch <= np.tile(power_ch, len_opt)]  # power upper limit
+constraints += [p_ch >= np.tile(0, len_opt)]  # power lower limit
+constraints += [p_dis <= np.tile(power_dis, len_opt)]  # power upper limit
+constraints += [p_dis >= np.tile(0, len_opt)]  # power lower limit
+constraints += [ene[len_opt] == ene_init]  # ending
+constraints += [ene[0] == ene_init]  # ending
+for k in range(len_opt):
+    constraints += [ene[k + 1] == ene[k] + (p_ch[k]-p_dis[k]) * dt]
 
-energy_cost = - cp.sum(cp.multiply(p_ch, raw_data.LMP[0:K]) * dt * 1/eff_ch) + cp.sum(cp.multiply(p_dis, raw_data.LMP[0:K]) * dt* eff_dis)
+energy_cost = cp.sum(cp.multiply(p_ch, prices_round[0:len_opt]) * dt * 1/eff_ch) - cp.sum(cp.multiply(p_dis, prices_round[0:len_opt]) * dt * eff_dis)
 obj = cp.Minimize(energy_cost)
 
 # Form and solve problem using Gurobi
@@ -109,6 +112,8 @@ print(end-start)
 print("status:", prob.status)
 print("optimal value", prob.value)
 
+# ensure ESS is not charging and discharging at the same time
+assert all(p_ch.value * p_dis.value == 0)
 
 # Random Solution
 env_random = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis, power_ch=power_ch, power_dis=power_dis, dt=dt)
