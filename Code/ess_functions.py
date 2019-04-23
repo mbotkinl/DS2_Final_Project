@@ -127,17 +127,17 @@ def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch,
                 -env_random.ene * env_random.dt) / env_random.dt
 
         # Get new state and reward from environment
-        env_random.step(a, data[k])
+        env_random.step(a, data[k], 0)
         log_random[k, 1] = a
 
-    return log_random, -env_random.total_reward
+    return log_random, env_random.total_cost
 
 
-def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, dt):
+def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, dt, epsilon, alpha, gamma, eta):
     print("Running Q Solution")
     env = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis, power_ch=power_ch, power_dis=power_dis, dt=dt)
 
-    log_q = np.zeros((K, 2)) # energy, power
+    log_q = np.zeros((K, 2))  # energy, power
 
     actions = [-power_dis, 0, power_ch]
     num_actions = len(actions)
@@ -146,26 +146,24 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
 
     ene_bins = np.linspace(0, ene_cap, num_ene).round()
 
-    price_bins = np.linspace(min(data), max(data), num_price).round()
+
+    price_bins = np.quantile(data,np.linspace(0, 1, num_price))
+    # price_bins = np.linspace(min(data), max(data), num_price).round()
     price_inds = np.digitize(data, price_bins)
-    prices = price_bins[price_inds]
+    prices = price_bins[price_inds-1]
+    avg_price = prices[0]
 
-    Q = np.zeros([num_price*num_ene, num_actions])  # price_0/ene_0, price_1/ene_0,...
-
-    # lr = .8
-    # y = .95
-    alpha = 0.5
-    gamma = 0.8
-    epsilon = 0.5
+    Q = np.random.rand(num_price*num_ene, num_actions)/100  # price_0/ene_0, price_1/ene_0,...
 
     for k in range(K-1):
         #print("Time Step:", k)
         log_q[k, 0] = env.ene
 
         price = prices[k]
+        avg_price = (1-eta)*avg_price + eta*price
         price_ind = price_inds[k]
         ene_ind = np.digitize(env.ene, ene_bins)
-        s_ind = price_ind+(ene_ind*num_price)
+        s_ind = price_ind+((ene_ind-1)*num_price)
 
         if np.random.random() < 1 - epsilon:
             a_ind = np.random.randint(0, num_actions)
@@ -178,13 +176,13 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
         a = max(min(a*env.dt, env.dt*(env.ene_cap-env.ene)), -env.ene*env.dt)/env.dt
 
         # Get new state and reward from environment
-        env.step(a, price)
+        env.step(a, price, avg_price)
         ene_ind_new = np.digitize(env.ene, ene_bins)
         price_ind_new = price_inds[k+1]
-        s_ind_new = price_ind_new+(ene_ind_new*num_price)
+        s_ind_new = price_ind_new+((ene_ind_new-1)*num_price)
 
         # Update Q-Table with new knowledge
         # Q[s_ind, a_ind] = Q[s_ind, a_ind] + lr * (env.reward + y * np.max(Q[s_ind_new, :]) - Q[s_ind, a_ind])
         Q[s_ind, a_ind] = (1 - alpha) * Q[s_ind, a_ind] + alpha * (env.reward + gamma * np.max(Q[s_ind_new, :]))
         log_q[k, 1] = a
-    return log_q, -env.total_reward
+    return log_q, env.total_cost
