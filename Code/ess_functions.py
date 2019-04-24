@@ -83,7 +83,7 @@ def run_data_description(raw_data):
     # raw_data.plot.density(logy=True, logx=True)
 
 
-def run_central_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, dt):
+def run_central_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, degr_perc, dt):
     print("Running Central Opt Solution")
 
     prices_round = data.round(2)
@@ -101,7 +101,7 @@ def run_central_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch
     constraints += [ene[len_opt] == ene_init]  # ending
     constraints += [ene[0] == ene_init]  # ending
     for k in range(len_opt):
-        constraints += [ene[k + 1] == ene[k] + (p_ch[k] - p_dis[k]) * dt]
+        constraints += [ene[k + 1] == ene[k] + (p_ch[k] - p_dis[k]) * dt - degr_perc/100*ene[k]]
 
     energy_cost = cp.sum(cp.multiply(p_ch, prices_round[0:len_opt]) * dt * 1 / eff_ch) - cp.sum(
         cp.multiply(p_dis, prices_round[0:len_opt]) * dt * eff_dis)
@@ -127,11 +127,11 @@ def run_central_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch
     return log_central, prob.value
 
 
-def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, dt):
+def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, degr_perc, dt):
     print("Running Random Solution")
 
     env_random = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis,
-                          power_ch=power_ch, power_dis=power_dis, dt=dt)
+                          power_ch=power_ch, power_dis=power_dis, degr_perc=degr_perc, dt=dt)
     log_random = np.zeros((K, 2))  # energy, power
     actions = [-power_dis, 0, power_ch]
     num_actions = len(actions)
@@ -153,9 +153,10 @@ def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch,
     return log_random, env_random.total_cost
 
 
-def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, dt, epsilon, alpha, gamma, eta):
+def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, degr_perc, dt, epsilon, alpha, gamma, eta):
     print("Running Q Solution")
-    env = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis, power_ch=power_ch, power_dis=power_dis, dt=dt)
+    env = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis, power_ch=power_ch,
+                   power_dis=power_dis,  degr_perc=degr_perc, dt=dt)
 
     log_q = np.zeros((K, 2))  # energy, power
 
