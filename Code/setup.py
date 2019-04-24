@@ -28,16 +28,16 @@ eff_dis = 0.9
 power_ch = 5  # MW
 power_dis = 5  # MW
 dt = 5/60
-degr_perc = 0.1
+self_disch = 0.1
 
 # Central Solution
 log_central, cost_central = ess.run_central_solution(K, raw_data.LMP, ene_cap, ene_init, power_ch, power_dis,
-                                                     eff_ch, eff_dis, degr_perc, dt)
+                                                     eff_ch, eff_dis, self_disch, dt)
 print("Central Cost:", cost_central)
 
 # Random Solution
 log_random, cost_random = ess.run_random_solution(K, raw_data.LMP, ene_cap, ene_init, power_ch, power_dis,
-                                                  eff_ch, eff_dis, degr_perc, dt)
+                                                  eff_ch, eff_dis, self_disch, dt)
 print("Random Cost:", cost_random)
 
 # Q Learning Solution
@@ -45,7 +45,7 @@ alpha = 0.4
 gamma = 0.2
 epsilon = 0.8
 eta = 0.2
-log_q, cost_q = ess.run_q_solution(K, raw_data.LMP, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, degr_perc,
+log_q, cost_q = ess.run_q_solution(K, raw_data.LMP, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, self_disch,
                                    dt, epsilon, alpha, gamma, eta)
 print("Q Cost:", cost_q)
 
