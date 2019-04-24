@@ -44,7 +44,7 @@ log_q, cost_q = ess.run_q_solution(K, raw_data.LMP, ene_cap, ene_init, power_ch,
                                    epsilon, alpha, gamma, eta)
 
 
-#summary
+# summary
 print("Central Cost:", cost_central)
 print("Random Cost:", cost_random)
 print("Q Cost:", cost_q)

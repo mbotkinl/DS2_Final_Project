@@ -10,6 +10,48 @@ matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 
 
+def read_data_old(loc_ID):
+    print("Reading in Data")
+    data_folder = Path('./Data/historical')
+    files = os.listdir(data_folder)
+
+    raw_data = pd.DataFrame()
+    for file in files:
+        date = file.split('_')[2]
+        df = pd.read_csv(data_folder / file, skiprows=5)
+        df = df.loc[df.H == 'D']
+        df = df.loc[df['Location ID'] == loc_ID]
+        df['dttm'] = date + ' ' + df['Local Time']
+        df['dttm'] = pd.to_datetime(df['dttm'], format='%Y%m%d %H:%M:%S')
+        df = df.set_index('dttm')
+        df = df['LMP']
+        df = df.astype('float')
+        raw_data = pd.concat([raw_data, df])
+
+    raw_data.columns = pd.Index(['LMP'])  # $/MWh
+    return raw_data
+
+
+def read_data(loc_ID):
+    print("Reading in Data")
+    data_folder = Path('./Data/', loc_ID)
+    files = os.listdir(data_folder)
+
+    raw_data = pd.DataFrame()
+    for file in files:
+        df = pd.read_csv(data_folder / file, skiprows=3)
+        df = df.loc[df.H == 'D']
+        df = df.loc[df['Location ID'] == loc_ID]
+        df['dttm'] = pd.to_datetime(df['Local Time'], format='%Y-%m-%d %H:%M:%S')
+        df = df.set_index('dttm')
+        df = df['LMP']
+        df = df.astype('float')
+        raw_data = pd.concat([raw_data, df])
+
+    raw_data.columns = pd.Index(['LMP'])  # $/MWh
+    return raw_data
+
+
 def run_data_description(raw_data):
     summ = raw_data.describe()
     summ.transpose().to_latex()
@@ -39,28 +81,6 @@ def run_data_description(raw_data):
     plt.tight_layout()
 
     # raw_data.plot.density(logy=True, logx=True)
-
-
-def read_data(loc_ID):
-    print("Reading in Data")
-    data_folder = Path('./Data/historical')
-    files = os.listdir(data_folder)
-
-    raw_data = pd.DataFrame()
-    for file in files:
-        date = file.split('_')[2]
-        df = pd.read_csv(data_folder / file, skiprows=5)
-        df = df.loc[df.H == 'D']
-        df = df.loc[df['Location ID'] == loc_ID]
-        df['dttm'] = date + ' ' + df['Local Time']
-        df['dttm'] = pd.to_datetime(df['dttm'], format='%Y%m%d %H:%M:%S')
-        df = df.set_index('dttm')
-        df = df['LMP']
-        df = df.astype('float')
-        raw_data = pd.concat([raw_data, df])
-
-    raw_data.columns = pd.Index(['LMP'])  # $/MWh
-    return raw_data
 
 
 def run_central_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, dt):
