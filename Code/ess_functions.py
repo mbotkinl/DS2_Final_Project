@@ -87,7 +87,7 @@ def run_central_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch
     print("Running Central Opt Solution")
 
     prices_round = data.round(2)
-    len_opt = K-1
+    len_opt = K
     p_ch = cp.Variable(len_opt, name='p_ch', nonneg=True)  # EV Charging power
     p_dis = cp.Variable(len_opt, name='p_dis', nonneg=True)  # EV Discharging power
     ene = cp.Variable(len_opt + 1, name='ene', nonneg=True)  # ESS Energy
@@ -103,9 +103,8 @@ def run_central_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch
     for k in range(len_opt):
         constraints += [ene[k + 1] == ene[k] + (p_ch[k] - p_dis[k]) * dt - self_disch/100*ene[k]]
 
-    energy_cost = cp.sum(cp.multiply(p_ch, prices_round[0:len_opt]) * dt * 1 / eff_ch) - cp.sum(
-        cp.multiply(p_dis, prices_round[0:len_opt]) * dt * eff_dis)
-    obj = cp.Minimize(energy_cost)
+    costVector = cp.multiply(p_ch, prices_round[0:len_opt]) * dt * 1 / eff_ch - cp.multiply(p_dis, prices_round[0:len_opt]) * dt * eff_dis
+    obj = cp.Minimize(cp.sum(costVector))
 
     # Form and solve problem using Gurobi
     prob = cp.Problem(obj, constraints)
@@ -120,9 +119,8 @@ def run_central_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch
     assert all(p_ch.value * p_dis.value == 0)
     assert prob.status == cp.OPTIMAL
 
-    log_central = np.zeros((K, 2))
-    log_central[:, 0] = ene.value
-    log_central[0:K-1, 1] = p_ch.value - p_dis.value
+    log_central = pd.DataFrame({'LMP': data.values, 'Energy': ene.value[1:K+1], 'Power': p_ch.value - p_dis.value,
+                               'cumul_prof': -np.cumsum(costVector.value)}, index=data.index)
 
     return log_central, prob.value
 
@@ -132,13 +130,19 @@ def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch,
 
     env_random = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis,
                           power_ch=power_ch, power_dis=power_dis, self_disch=self_disch, dt=dt)
-    log_random = np.zeros((K, 2))  # energy, power
+
+    dates = data.index
+    ene = np.zeros(K)
+    p = np.zeros(K)
+    cumul_prof = np.zeros(K)
+
     actions = [-power_dis, 0, power_ch]
     num_actions = len(actions)
 
     for k in range(K - 1):
         #print("Time Step:", k)
-        log_random[k, 0] = env_random.ene
+        # log_random.loc[dates[k], 'Energy'] = env_random.ene
+        ene[k] = env_random.ene
 
         a_ind = np.random.randint(0, num_actions)
         a = actions[a_ind]
@@ -147,9 +151,14 @@ def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch,
                 -env_random.ene * env_random.dt) / env_random.dt
 
         # Get new state and reward from environment
-        env_random.step(a, data[k], 0)
-        log_random[k, 1] = a
+        env_random.step(a, data[k], 0, 1)
+        p[k] = a
+        cumul_prof[k] = -env_random.total_cost
+        # log_random.loc[dates[k], 'Power'] = a
+        # log_random.loc[dates[k], 'cumul_prof'] = env_random.total_cost
 
+    log_random = pd.DataFrame({'LMP': data.values, 'Energy': ene, 'Power': p, 'cumul_prof': cumul_prof},
+                              index=dates)
     return log_random, env_random.total_cost
 
 
@@ -158,7 +167,10 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
     env = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis, power_ch=power_ch,
                    power_dis=power_dis,  self_disch=self_disch, dt=dt)
 
-    log_q = np.zeros((K, 2))  # energy, power
+    dates = data.index
+    ene = np.zeros(K)
+    p = np.zeros(K)
+    cumul_prof = np.zeros(K)
 
     actions = [-power_dis, 0, power_ch]
     num_actions = len(actions)
@@ -166,7 +178,6 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
     num_price = 50
 
     ene_bins = np.linspace(0, ene_cap, num_ene).round()
-
 
     price_bins = np.quantile(data,np.linspace(0, 1, num_price))
     # price_bins = np.linspace(min(data), max(data), num_price).round()
@@ -176,9 +187,9 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
 
     Q = np.random.rand(num_price*num_ene, num_actions)/100  # price_0/ene_0, price_1/ene_0,...
 
-    for k in range(K-1):
-        #print("Time Step:", k)
-        log_q[k, 0] = env.ene
+    for k in range(K):
+        # print("Time Step:", k)
+        ene[k] = env.ene
 
         price = prices[k]
         avg_price = (1-eta)*avg_price + eta*price
@@ -205,5 +216,8 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
         # Update Q-Table with new knowledge
         # Q[s_ind, a_ind] = Q[s_ind, a_ind] + lr * (env.reward + y * np.max(Q[s_ind_new, :]) - Q[s_ind, a_ind])
         Q[s_ind, a_ind] = (1 - alpha) * Q[s_ind, a_ind] + alpha * (env.reward + gamma * np.max(Q[s_ind_new, :]))
-        log_q[k, 1] = a
+        p[k] = a
+        cumul_prof[k] = -env.total_cost
+
+    log_q = pd.DataFrame({'LMP': data.values, 'Energy': ene, 'Power': p, 'cumul_prof': cumul_prof}, index=dates)
     return log_q, env.total_cost
