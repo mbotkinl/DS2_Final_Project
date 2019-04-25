@@ -139,7 +139,7 @@ def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch,
     actions = [-power_dis, 0, power_ch]
     num_actions = len(actions)
 
-    for k in range(K - 1):
+    for k in range(K):
         #print("Time Step:", k)
         # log_random.loc[dates[k], 'Energy'] = env_random.ene
         ene[k] = env_random.ene
@@ -147,8 +147,7 @@ def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch,
         a_ind = np.random.randint(0, num_actions)
         a = actions[a_ind]
         # cap charge or discharge to keep ene limits
-        a = max(min(a * env_random.dt, env_random.dt * (env_random.ene_cap - env_random.ene)),
-                -env_random.ene * env_random.dt) / env_random.dt
+        a = max(min(a, (env_random.ene_cap - env_random.ene)/env_random.dt), -env_random.ene / env_random.dt)
 
         # Get new state and reward from environment
         env_random.step(a, data[k], 0, 1)
@@ -205,12 +204,12 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
         a = actions[a_ind]
 
         # cap charge or discharge to keep ene limits
-        a = max(min(a*env.dt, env.dt*(env.ene_cap-env.ene)), -env.ene*env.dt)/env.dt
+        a = max(min(a, (env.ene_cap-env.ene)/env.dt), -env.ene/env.dt)
 
         # Get new state and reward from environment
         env.step(a, price, avg_price)
         ene_ind_new = np.digitize(env.ene, ene_bins)
-        price_ind_new = price_inds[k+1]
+        price_ind_new = price_inds[min(k+1, K-1)]
         s_ind_new = price_ind_new+((ene_ind_new-1)*num_price)
 
         # Update Q-Table with new knowledge
