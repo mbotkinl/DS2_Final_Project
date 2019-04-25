@@ -1,6 +1,4 @@
 import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
 
 
 class ESSEnv(gym.Env):
@@ -22,12 +20,15 @@ class ESSEnv(gym.Env):
         self.total_reward = 0
         self.total_cost = 0
 
-    def step(self, power, price, avg_price):
-        self.ene = self.ene + self.dt*power - self.self_disch/100*self.ene
+    def step(self, power, price, avg_price, reward_mode):
+        self.ene = (self.ene + self.dt*power - self.self_disch/100*self.ene).__round__(4)
         self.time = self.time+self.dt
         self.cost = self.dt*price*(self.eff_dis*min(0, power)+1/self.eff_ch*max(power, 0))
         self.total_cost = self.total_cost + self.cost
-        self.reward = -self.dt*(price-avg_price)*self.eff_dis*min(0, power)+self.dt*(avg_price-price)*1/self.eff_ch*max(power, 0)
+        if reward_mode == 1:
+            self.reward = -self.cost
+        elif reward_mode == 2:
+            self.reward = -self.dt*(price-avg_price)*self.eff_dis*min(0, power)+self.dt*(avg_price-price)*1/self.eff_ch*max(power, 0)
         self.total_reward = self.total_reward + self.reward
 
     def reset(self):
