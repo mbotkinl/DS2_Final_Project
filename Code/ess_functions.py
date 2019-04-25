@@ -161,7 +161,8 @@ def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch,
     return log_random, env_random.total_cost
 
 
-def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, self_disch, dt, epsilon, alpha, gamma, eta):
+def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, self_disch, dt, epsilon, alpha,
+                   gamma, eta, reward_mode):
     print("Running Q Solution")
     env = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis, power_ch=power_ch,
                    power_dis=power_dis,  self_disch=self_disch, dt=dt)
@@ -207,7 +208,7 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
         a = max(min(a, (env.ene_cap-env.ene)/env.dt), -env.ene/env.dt)
 
         # Get new state and reward from environment
-        env.step(a, price, avg_price)
+        env.step(a, price, avg_price, reward_mode)
         ene_ind_new = np.digitize(env.ene, ene_bins)
         price_ind_new = price_inds[min(k+1, K-1)]
         s_ind_new = price_ind_new+((ene_ind_new-1)*num_price)
