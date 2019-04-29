@@ -2,14 +2,14 @@
 # Micah Botkin-Levy
 # 4/11/19
 import pandas as pd
+import numpy as np
 import ess_functions as ess
 import matplotlib
 matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 
-
 # matplotlib style
-font = {'size': 30}
+font = {'size': 35}
 matplotlib.rc('font', **font)
 #plt.style.use('default')
 
@@ -17,12 +17,12 @@ matplotlib.rc('font', **font)
 loc_ID = '363'
 raw_data = ess.read_data(loc_ID)
 #ess.run_data_description()
-
+#raw_data.LMP = np.maximum(raw_data.LMP, 0)
 
 # problem parameters
-num_runs = 20
+num_runs = 5
 K = raw_data.shape[0]
-ene_cap = 10  # MWh
+ene_cap = 20  # MWh
 ene_init = 0.5*ene_cap
 eff_ch = 0.9
 eff_dis = 0.9
@@ -141,8 +141,8 @@ plot_power = pd.DataFrame({'Random': log_random[:, 1],
 
 plt.figure()
 # plot_power.hist(subplots=False)
-plt.hist([log_random[:, 1], log_q[:, 1], log_central[:, 1]], bins=40, label=['Random', 'Q-Learning', 'Central Opt.'])
-plt.hist([log_random[:, 1], log_q[:, 1], log_central[:, 1]], bins=40, label=['Random', 'Q-Learning', 'Central Opt.'], log=True)
+plt.hist([log_random[:, 1], log_q1[:, 1], log_central[:, 1]], bins=40, label=['Random', 'Q-Learning 1', 'Central Opt.'])
+plt.hist([log_random[:, 1], log_q2[:, 1], log_central[:, 1]], bins=40, label=['Random', 'Q-Learning 1', 'Central Opt.'], log=True)
 # plt.hist(log_random[:, 1], bins=40, alpha=0.5, color='r', label='Random')
 # plt.hist(log_q[:, 1], bins=40, alpha=0.5, color='g', label='Q-Learning')
 # plt.hist(log_central[:, 1], bins=40, alpha=0.5, color='b', label='Central Opt.')

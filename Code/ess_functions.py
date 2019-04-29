@@ -8,7 +8,9 @@ import gym_ess
 import matplotlib
 matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
+# from pandas.plotting import register_matplotlib_converters
 
 def read_data_old(loc_ID):
     print("Reading in Data")
@@ -54,23 +56,23 @@ def read_data(loc_ID):
 
 def run_data_description(raw_data):
     summ = raw_data.describe()
-    summ.transpose().to_latex()
+    summ.transpose().round(2).to_latex()
 
-    fig = plt.figure()
+    fig, ax = plt.subplots()
     plt.plot(raw_data)
-    plt.xlabel('Date')
+    plt.xlabel('Time')
     plt.ylabel('LMP ($/MWh)')
-    fig.autofmt_xdate()
+    ax.xaxis.set_major_locator(mdates.MonthLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))
     plt.tight_layout()
-
 
     raw_data.hist(bins=50)
     plt.xlabel('LMP ($/MWh)')
     plt.ylabel('Frequency')
+    plt.title('')
     plt.tight_layout()
 
-
-    raw_data.plot.density(ind=np.linspace(raw_data.LMP.min()-raw_data.LMP.std(), raw_data.LMP.max()+raw_data.LMP.std(), num=1000))
+    raw_data.plot.density(ind=np.linspace(raw_data.LMP.min()-raw_data.LMP.std(), raw_data.LMP.max()+raw_data.LMP.std(), num=1000), legend=False)
     plt.xlabel('LMP ($/MWh)')
     plt.ylabel('Probability')
     plt.tight_layout()
@@ -78,6 +80,7 @@ def run_data_description(raw_data):
     raw_data.hist(log=True, bins=50)
     plt.xlabel('LMP ($/MWh)')
     plt.ylabel('Frequency')
+    plt.title('')
     plt.tight_layout()
 
     # raw_data.plot.density(logy=True, logx=True)
