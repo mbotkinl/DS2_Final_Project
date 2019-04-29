@@ -226,3 +226,69 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
 
     log_q = pd.DataFrame({'LMP': data.values, 'Energy': ene, 'Power': p, 'cumul_prof': cumul_prof}, index=dates)
     return log_q, env.total_cost
+
+
+def plot_results(data, log_random, log_q1, log_q2, log_central):
+
+    # total energy plot
+    fig, ax1 = plt.subplots()
+    ax1.plot(log_random.loc[:, 'Energy'], 'r', label='Random')
+    ax1.plot(log_q1.loc[:, 'Energy'], 'g', label='Q-Learning 1')
+    ax1.plot(log_q2.loc[:, 'Energy'], 'm', label='Q-Learning 2')
+    ax1.plot(log_central.loc[:, 'Energy'], 'b', label='Central Opt.')
+    ax2 = ax1.twinx()
+    ax2.plot(data, 'k', label='LMP')
+    fig.autofmt_xdate()
+    ax1.set_xlabel('Time Step (5min)')
+    ax1.set_ylabel('Energy (MWh)')
+    ax2.set_ylabel('Prices ($/MWh)')
+    ax1.legend()
+    plt.tight_layout()
+
+    # total power plot
+    fig, ax1 = plt.subplots()
+    ax1.plot(log_random.loc[:, 'Power'], 'r', label='Random')
+    ax1.plot(log_q1.loc[:, 'Power'], 'g', label='Q-Learning 1')
+    ax1.plot(log_q2.loc[:, 'Power'], 'm', label='Q-Learning 2')
+    ax1.plot(log_central.loc[:, 'Power'], 'b', label='Central Opt.')
+    ax2 = ax1.twinx()
+    ax2.plot(data, 'k', label='LMP')
+    fig.autofmt_xdate()
+    ax1.set_xlabel('Time Step (5min)')
+    ax1.set_ylabel('Power (MW)')
+    ax2.set_ylabel('Prices ($/MWh)')
+    ax1.legend()
+    plt.tight_layout()
+
+    # cumulative profits
+    fig, ax1 = plt.subplots()
+    ax1.plot(log_random.loc[:, 'cumul_prof'], 'r', label='Random')
+    ax1.plot(log_q1.loc[:, 'cumul_prof'], 'g', label='Q-Learning 1')
+    ax1.plot(log_q2.loc[:, 'cumul_prof'], 'm', label='Q-Learning 2')
+    ax1.plot(log_central.loc[:, 'cumul_prof'], 'b', label='Central Opt.')
+    fig.autofmt_xdate()
+    ax1.set_xlabel('Time Step (5min)')
+    ax1.set_ylabel('Cumulative Profit ($)')
+    ax1.legend()
+    plt.grid(axis='y')
+    plt.tight_layout()
+
+    plot_power = pd.DataFrame({'Random': log_random[:, 1],
+                               'Q1': log_q1[:, 1],
+                               'Q2': log_q2[:, 1],
+                               'Central Opt.': log_central[:, 1]})
+
+    plt.figure()
+    # plot_power.hist(subplots=False)
+    plt.hist([log_random[:, 1], log_q1[:, 1], log_central[:, 1]], bins=40,
+             label=['Random', 'Q-Learning 1', 'Central Opt.'])
+    plt.hist([log_random[:, 1], log_q2[:, 1], log_central[:, 1]], bins=40,
+             label=['Random', 'Q-Learning 1', 'Central Opt.'], log=True)
+    # plt.hist(log_random[:, 1], bins=40, alpha=0.5, color='r', label='Random')
+    # plt.hist(log_q[:, 1], bins=40, alpha=0.5, color='g', label='Q-Learning')
+    # plt.hist(log_central[:, 1], bins=40, alpha=0.5, color='b', label='Central Opt.')
+    plt.xlabel('Power (MW)')
+    plt.ylabel('Frequency')
+    plt.legend()
+    plt.tight_layout()
+
