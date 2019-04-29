@@ -30,6 +30,7 @@ power_ch = 5  # MW
 power_dis = 5  # MW
 dt = 5/60
 self_disch = 0.1
+avg_price_init = 40
 
 # Central Solution
 log_central, cost_central = ess.run_central_solution(K, raw_data.LMP, ene_cap, ene_init, power_ch, power_dis,
@@ -57,7 +58,7 @@ cost_q1_avg = 0
 log_q1 = None
 for n in range(num_runs):
     log_q1, cost_q1 = ess.run_q_solution(K, raw_data.LMP, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis,
-                                         self_disch, dt, epsilon, alpha, gamma, eta, reward_mode)
+                                         self_disch, dt, epsilon, alpha, gamma, eta, reward_mode, avg_price_init)
     cost_q1_avg += cost_q1
 
 cost_q1_avg = cost_q1_avg/num_runs
@@ -70,7 +71,7 @@ cost_q2_avg = 0
 log_q2 = None
 for n in range(num_runs):
     log_q2, cost_q2 = ess.run_q_solution(K, raw_data.LMP, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, self_disch,
-                                         dt, epsilon, alpha, gamma, eta, reward_mode)
+                                         dt, epsilon, alpha, gamma, eta, reward_mode, avg_price_init)
     cost_q2_avg += cost_q2
 
 cost_q2_avg = cost_q2_avg/num_runs

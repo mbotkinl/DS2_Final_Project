@@ -162,7 +162,7 @@ def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch,
 
 
 def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, self_disch, dt, epsilon, alpha,
-                   gamma, eta, reward_mode):
+                   gamma, eta, reward_mode, avg_price_init):
     print("Running Q Solution")
     env = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis, power_ch=power_ch,
                    power_dis=power_dis,  self_disch=self_disch, dt=dt)
@@ -183,7 +183,9 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
     # price_bins = np.linspace(min(data), max(data), num_price).round()
     price_inds = np.digitize(data, price_bins)
     prices = price_bins[price_inds-1]
-    avg_price = prices[0]
+
+    avg_price = avg_price_init
+
 
     Q = np.random.rand(num_price*num_ene, num_actions)/100  # price_0/ene_0, price_1/ene_0,...
 
