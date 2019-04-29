@@ -232,32 +232,58 @@ def plot_results(data, log_random, log_q1, log_q2, log_central):
 
     # total energy plot
     fig, ax1 = plt.subplots()
-    ax1.plot(log_random.loc[:, 'Energy'], 'r', label='Random')
-    ax1.plot(log_q1.loc[:, 'Energy'], 'g', label='Q-Learning 1')
-    ax1.plot(log_q2.loc[:, 'Energy'], 'm', label='Q-Learning 2')
-    ax1.plot(log_central.loc[:, 'Energy'], 'b', label='Central Opt.')
+    ax1.plot(log_random.loc[:, 'Energy'], 'r', label='Random', drawstyle='steps')
+    ax1.plot(log_q1.loc[:, 'Energy'], 'g', label='Q-Learning 1', drawstyle='steps')
+    ax1.plot(log_q2.loc[:, 'Energy'], 'm', label='Q-Learning 2', drawstyle='steps')
+    ax1.plot(log_central.loc[:, 'Energy'], 'b', label='Central Opt.', drawstyle='steps')
     ax2 = ax1.twinx()
-    ax2.plot(data, 'k', label='LMP')
-    fig.autofmt_xdate()
-    ax1.set_xlabel('Time Step (5min)')
+    ax2.plot(data[:], 'k', label='LMP', drawstyle='steps')
+    ax1.xaxis.set_major_locator(mdates.MonthLocator())
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))
+    ax1.set_xlabel('Time')
     ax1.set_ylabel('Energy (MWh)')
     ax2.set_ylabel('Prices ($/MWh)')
     ax1.legend()
     plt.tight_layout()
 
     # total power plot
-    fig, ax1 = plt.subplots()
-    ax1.plot(log_random.loc[:, 'Power'], 'r', label='Random')
-    ax1.plot(log_q1.loc[:, 'Power'], 'g', label='Q-Learning 1')
-    ax1.plot(log_q2.loc[:, 'Power'], 'm', label='Q-Learning 2')
-    ax1.plot(log_central.loc[:, 'Power'], 'b', label='Central Opt.')
-    ax2 = ax1.twinx()
-    ax2.plot(data, 'k', label='LMP')
+    # fig, ax1 = plt.subplots()
+    # ax1.plot(log_random.loc[:, 'Power'], 'r', label='Random')
+    # ax1.plot(log_q1.loc[:, 'Power'], 'g', label='Q-Learning 1')
+    # ax1.plot(log_q2.loc[:, 'Power'], 'm', label='Q-Learning 2')
+    # ax1.plot(log_central.loc[:, 'Power'], 'b', label='Central Opt.')
+    # ax2 = ax1.twinx()
+    # ax2.plot(data[:], 'k', label='LMP')
+    # ax1.xaxis.set_major_locator(mdates.MonthLocator())
+    # ax1.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))
+    # ax1.set_xlabel('Time')
+    # ax1.set_ylabel('Power (MW)')
+    # ax2.set_ylabel('Prices ($/MWh)')
+    # ax1.legend()
+    # plt.tight_layout()
+
+    # combine
+    font = {'size': 20}
+    matplotlib.rc('font', **font)
+    randind = np.random.randint(5000, len(data))
+    date_ind = data.index[randind:randind+288]
+    fig, axarr = plt.subplots(3, 1, sharex=True)
+    axarr[0].plot(log_random.loc[date_ind, 'Energy'], 'r', label='Random', drawstyle='steps')
+    axarr[0].plot(log_q1.loc[date_ind, 'Energy'], 'g', label='Q-Learning 1', drawstyle='steps')
+    axarr[0].plot(log_q2.loc[date_ind, 'Energy'], 'm', label='Q-Learning 2', drawstyle='steps')
+    axarr[0].plot(log_central.loc[date_ind, 'Energy'], 'b', label='Central Opt.', drawstyle='steps')
+    axarr[0].set_ylabel('Energy (MWh)')
+    axarr[1].plot(log_random.loc[date_ind, 'Power'], 'r', label='Random', drawstyle='steps')
+    axarr[1].plot(log_q1.loc[date_ind, 'Power'], 'g', label='Q-Learning 1', drawstyle='steps')
+    axarr[1].plot(log_q2.loc[date_ind, 'Power'], 'm', label='Q-Learning 2', drawstyle='steps')
+    axarr[1].plot(log_central.loc[date_ind, 'Power'], 'b', label='Central Opt.', drawstyle='steps')
+    axarr[1].set_ylabel('Power (MW)')
+    axarr[1].legend(loc='right')
+    axarr[2].plot(data[date_ind], 'k', label='LMP')
+    axarr[2].set_ylabel('Prices ($/MWh)')
+    axarr[2].set_xlabel('Time')
+    axarr[2].legend()
     fig.autofmt_xdate()
-    ax1.set_xlabel('Time Step (5min)')
-    ax1.set_ylabel('Power (MW)')
-    ax2.set_ylabel('Prices ($/MWh)')
-    ax1.legend()
     plt.tight_layout()
 
     # cumulative profits
@@ -266,24 +292,21 @@ def plot_results(data, log_random, log_q1, log_q2, log_central):
     ax1.plot(log_q1.loc[:, 'cumul_prof'], 'g', label='Q-Learning 1')
     ax1.plot(log_q2.loc[:, 'cumul_prof'], 'm', label='Q-Learning 2')
     ax1.plot(log_central.loc[:, 'cumul_prof'], 'b', label='Central Opt.')
-    fig.autofmt_xdate()
-    ax1.set_xlabel('Time Step (5min)')
+    ax1.xaxis.set_major_locator(mdates.MonthLocator())
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))
+    ax1.set_xlabel('Time')
     ax1.set_ylabel('Cumulative Profit ($)')
     ax1.legend()
     plt.grid(axis='y')
     plt.tight_layout()
 
-    plot_power = pd.DataFrame({'Random': log_random[:, 1],
-                               'Q1': log_q1[:, 1],
-                               'Q2': log_q2[:, 1],
-                               'Central Opt.': log_central[:, 1]})
 
     plt.figure()
     # plot_power.hist(subplots=False)
-    plt.hist([log_random[:, 1], log_q1[:, 1], log_central[:, 1]], bins=40,
-             label=['Random', 'Q-Learning 1', 'Central Opt.'])
-    plt.hist([log_random[:, 1], log_q2[:, 1], log_central[:, 1]], bins=40,
-             label=['Random', 'Q-Learning 1', 'Central Opt.'], log=True)
+    plt.hist([log_random.loc[:, 'Power'], log_q1.loc[:, 'Power'], log_q2.loc[:, 'Power'], log_central.loc[:, 'Power']], bins=40,
+             label=['Random', 'Q-Learning 1', 'Q-Learning 2', 'Central Opt.'])
+    plt.hist([log_random.loc[:, 'Power'], log_q1.loc[:, 'Power'], log_q2.loc[:, 'Power'], log_central.loc[:, 'Power']], bins=40,
+             label=['Random', 'Q-Learning 1', 'Q-Learning 2', 'Central Opt.'], log=True)
     # plt.hist(log_random[:, 1], bins=40, alpha=0.5, color='r', label='Random')
     # plt.hist(log_q[:, 1], bins=40, alpha=0.5, color='g', label='Q-Learning')
     # plt.hist(log_central[:, 1], bins=40, alpha=0.5, color='b', label='Central Opt.')
