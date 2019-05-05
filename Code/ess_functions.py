@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""ESS Functions
+Micah Botkin-Levy
+4/22/19
+"""
+
 import cvxpy as cp
 import numpy as np
 import pandas as pd
@@ -12,7 +20,14 @@ import matplotlib.dates as mdates
 
 # from pandas.plotting import register_matplotlib_converters
 
+
 def read_data_old(loc_ID):
+    """
+    Function to read in LMP data from files (no longer used)
+    :param loc_ID: location id to extract data for (string
+    :return: raw_data(DataFrame)
+    """
+
     print("Reading in Data")
     data_folder = Path('./Data/historical')
     files = os.listdir(data_folder)
@@ -35,6 +50,11 @@ def read_data_old(loc_ID):
 
 
 def read_data(loc_ID):
+    """
+    Function to read in LMP data from files
+    :param loc_ID: location id to extract data for (string)
+    :return: raw_data(DataFrame)
+    """
     print("Reading in Data")
     data_folder = Path('./Data/', loc_ID)
     files = os.listdir(data_folder)
@@ -55,6 +75,11 @@ def read_data(loc_ID):
 
 
 def run_data_description(raw_data):
+    """
+    Function to run exploratory data analysis on LMP data
+    :param raw_data: LMP data (DataFrame)
+    :return: Multiple Plots
+    """
     summ = raw_data.describe()
     summ.transpose().round(2).to_latex()
 
@@ -87,6 +112,21 @@ def run_data_description(raw_data):
 
 
 def run_central_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, self_disch, dt):
+    """
+    Run Perfect Forecast Optimization Problem
+    :param K: number of timesteps
+    :param data: LMP data
+    :param ene_cap: energy capacity (MWh)
+    :param ene_init: starting energy in ESS
+    :param power_ch: maximum charging power (MW)
+    :param power_dis: maximum discharging power (MW)
+    :param eff_ch: charging efficiency
+    :param eff_dis: discharging efficiency
+    :param self_disch: percent of energy lost to self-discharge per hour
+    :param dt: timestep length (hours)
+    :return log_central: log of energy, power, and cumulative profit
+    :return prob.value: cost of solution
+    """
     print("Running Central Opt Solution")
 
     prices_round = data.round(2)
@@ -129,6 +169,23 @@ def run_central_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch
 
 
 def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, self_disch, dt):
+    """
+    Run Random Algorithm
+
+    :param K: number of timesteps
+    :param data: LMP data
+    :param ene_cap: energy capacity (MWh)
+    :param ene_init: starting energy in ESS
+    :param power_ch: maximum charging power (MW)
+    :param power_dis: maximum discharging power (MW)
+    :param eff_ch: charging efficiency
+    :param eff_dis: discharging efficiency
+    :param self_disch: percent of energy lost to self-discharge per hour
+    :param dt: timestep length (hours)
+    :return log_random: log of energy, power, and cumulative profit
+    :return env_random.total_cost: cost of solution
+    """
+
     print("Running Random Solution")
 
     env_random = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis,
@@ -166,6 +223,29 @@ def run_random_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch,
 
 def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_dis, self_disch, dt, epsilon, alpha,
                    gamma, eta, reward_mode, avg_price_init):
+    """
+
+    :param K: number of timesteps
+    :param data: LMP data
+    :param ene_cap: energy capacity (MWh)
+    :param ene_init: starting energy in ESS
+    :param power_ch: maximum charging power (MW)
+    :param power_dis: maximum discharging power (MW)
+    :param eff_ch: charging efficiency
+    :param eff_dis: discharging efficiency
+    :param self_disch: percent of energy lost to self-discharge per hour
+    :param dt: timestep length (hours)
+    :param epsilon: epsilon greedy parameter
+    :param alpha: Q update weight
+    :param gamma: Q update weight
+    :param eta: Average Price Weight
+    :param reward_mode: Reward Mode
+    :param avg_price_init: Initial Avarage Price
+    :return log_q: log of energy, power, and cumulative profit
+    :return env.total_cost: cost of solution
+    """
+
+
     print("Running Q Solution")
     env = gym.make('ess-v0', ene_cap=ene_cap, ene_init=ene_init, eff_ch=eff_ch, eff_dis=eff_dis, power_ch=power_ch,
                    power_dis=power_dis,  self_disch=self_disch, dt=dt)
@@ -229,7 +309,15 @@ def run_q_solution(K, data, ene_cap, ene_init, power_ch, power_dis, eff_ch, eff_
 
 
 def plot_results(data, log_random, log_q1, log_q2, log_central):
-
+    """
+    Plot results of simulations
+    :param data: LMP data
+    :param log_random:  Random Log
+    :param log_q1: Q1 Log
+    :param log_q2: Q2 Log
+    :param log_central: Central Log
+    :return:
+    """
     # total energy plot
     fig, ax1 = plt.subplots()
     ax1.plot(log_random.loc[:, 'Energy'], 'r', label='Random', drawstyle='steps')

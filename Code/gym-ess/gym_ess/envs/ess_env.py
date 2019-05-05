@@ -1,6 +1,5 @@
 import gym
 
-
 class ESSEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 

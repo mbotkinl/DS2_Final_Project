@@ -1,6 +1,10 @@
-# DS 2 Final Project
-# Micah Botkin-Levy
-# 4/11/19
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""DS 2 Final Project Wrapper
+Micah Botkin-Levy
+4/11/19
+"""
 
 # import packages
 import pandas as pd
